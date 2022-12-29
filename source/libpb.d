@@ -86,7 +86,7 @@ public class PocketBase
 
 	public JSONValue updateRecord(string, RecordType)(string table, RecordType item)
 	{
-		idAbleCheck(record);
+		idAbleCheck(item);
 		
 		HTTP httpSettings = HTTP();
 		httpSettings.addRequestHeader("Content-Type", "application/json");
@@ -396,6 +396,8 @@ unittest
 
 unittest
 {
+	import core.thread : Thread, dur;
+	
 	PocketBase pb = new PocketBase();
 
 	struct Person
@@ -412,6 +414,12 @@ unittest
 	Person recordStored = pb.createRecord("dummy", p1);
 	pb.deleteRecord("dummy", recordStored.id);
 
+
 	recordStored = pb.createRecord("dummy", p1);
+	Thread.sleep(dur!("seconds")(3));
+	recordStored.age = 46;
+	pb.updateRecord("dummy", recordStored);
+	Thread.sleep(dur!("seconds")(3));
+
 	pb.deleteRecord("dummy", recordStored);
 }
