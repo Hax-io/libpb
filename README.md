@@ -116,7 +116,13 @@ p1.age = 23;
 Person recordStored = pb.createRecord("dummy", p1);
 pb.deleteRecord("dummy", recordStored.id);
 
+
 recordStored = pb.createRecord("dummy", p1);
+recordStored.age = 46;
+recordStored = pb.updateRecord("dummy", recordStored);
+
+Person recordFetched = pb.viewRecord!(Person)("dummy", recordStored.id);
+
 pb.deleteRecord("dummy", recordStored);
 ```
 
