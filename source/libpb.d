@@ -117,6 +117,8 @@ public class PocketBase
 		alias structNames = FieldNameTuple!(RecordType);
 		alias structValues = record.tupleof;
 
+		alias bool isBasic;
+
 		static foreach(cnt; 0..structTypes.length)
 		{
 			debug(dbg)
@@ -126,13 +128,42 @@ public class PocketBase
 				// pragma(msg, structValues[cnt]);
 			}
 
-			builtJSON[structNames[cnt]] = structValues[cnt];
+
+			static if(__traits(isSame, mixin(structTypes[cnt]), int))
+			{
+				builtJSON[structNames[cnt]] = structValues[cnt];
+			}
+			else static if(__traits(isSame, mixin(structTypes[cnt]), uint))
+			{
+				builtJSON[structNames[cnt]] = structValues[cnt];
+			}
+			else static if(__traits(isSame, mixin(structTypes[cnt]), ulong))
+			{
+				builtJSON[structNames[cnt]] = structValues[cnt];
+			}
+			else static if(__traits(isSame, mixin(structTypes[cnt]), long))
+			{
+				builtJSON[structNames[cnt]] = structValues[cnt];
+			}
+			else static if(__traits(isSame, mixin(structTypes[cnt]), string))
+			{
+				builtJSON[structNames[cnt]] = structValues[cnt];
+			}
+			else static if(__traits(isSame, mixin(structTypes[cnt]), JSONValue))
+			{
+				builtJSON[structNames[cnt]] = structValues[cnt];
+			}
+			else static if(__traits(isSame, mixin(structTypes[cnt]), bool))
+			{
+				builtJSON[structNames[cnt]] = structValues[cnt];
+			}
+			else
+			{
+				pragma(msg, "Yaa");
+				builtJSON[structNames[cnt]] = to!(string)(structValues[cnt]);
+			}
 		}
 
-		debug(dbg)
-		{
-			writeln(builtJSON.toPrettyString());
-		}
 
 		return builtJSON;
 	}
@@ -219,14 +250,19 @@ public class PocketBase
 
 }
 
-
-
+public enum EnumType
+{
+	DOG,
+	CAT
+}
 
 // Test serialization of a struct to JSON
 unittest
 {
 	import std.algorithm.searching : canFind;
 	import std.string : cmp;
+
+
 	
 	struct Person
 	{
@@ -234,6 +270,7 @@ unittest
 		public int age;
 		public string[] list;
 		public JSONValue extraJSON;
+		public EnumType eType;
 	}
 
 	Person p1;
@@ -242,6 +279,7 @@ unittest
 	p1.age = 23;
 	p1.list = ["1", "2", "3"];
 	p1.extraJSON = parseJSON(`{"item":1, "items":[1,2,3]}`);
+	p1.eType = EnumType.CAT;
 
 	JSONValue serialized = PocketBase.serializeRecord(p1);
 
@@ -249,6 +287,11 @@ unittest
 	assert(canFind(keys, "firstname") && cmp(serialized["firstname"].str(), "Tristan") == 0);
 	assert(canFind(keys, "lastname") && cmp(serialized["lastname"].str(), "Kildaire") == 0);
 	assert(canFind(keys, "age") && serialized["age"].integer() == 23);
+
+	debug(dbg)
+	{
+		writeln(serialized.toPrettyString());
+	}
 }
 
 
