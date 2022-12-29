@@ -7,7 +7,6 @@ libpb
 
 ## Example usage
 
-
 ### Server initiation
 
 Firstly we create a new PocketBase instance to manage our server:
@@ -84,6 +83,15 @@ This is to show off deserialization method `fromJSON(RecordType)(JSONValue jsonI
 	//TODO: object test case, list test case
 ```
 
+## Development
+
+### Unit tests
+
+To run tests you will want to enable the `pragma`s and `writeln`s. therefore pass the `dbg` flag in as such:
+
+```bash
+dub test -ddbg
+```
 
 ## License
 

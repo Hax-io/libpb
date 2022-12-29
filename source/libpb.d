@@ -119,14 +119,20 @@ public class PocketBase
 
 		static foreach(cnt; 0..structTypes.length)
 		{
-			pragma(msg, structTypes[cnt]);
-			pragma(msg, structNames[cnt]);
-			// pragma(msg, structValues[cnt]);
+			debug(dbg)
+			{
+				pragma(msg, structTypes[cnt]);
+				pragma(msg, structNames[cnt]);
+				// pragma(msg, structValues[cnt]);
+			}
 
 			builtJSON[structNames[cnt]] = structValues[cnt];
 		}
-		
-		writeln(builtJSON.toPrettyString());
+
+		debug(dbg)
+		{
+			writeln(builtJSON.toPrettyString());
+		}
 
 		return builtJSON;
 	}
@@ -145,9 +151,12 @@ public class PocketBase
 
 		static foreach(cnt; 0..structTypes.length)
 		{
-			pragma(msg, structTypes[cnt]);
-			pragma(msg, structNames[cnt]);
-			// pragma(msg, structValues[cnt]);
+			debug(dbg)
+			{
+				pragma(msg, structTypes[cnt]);
+				pragma(msg, structNames[cnt]);
+				// pragma(msg, structValues[cnt]);
+			}
 
 			//TODO: Add all integral types
 			static if(__traits(isSame, mixin(structTypes[cnt]), int))
@@ -169,23 +178,39 @@ public class PocketBase
 			static if(__traits(isSame, mixin(structTypes[cnt]), string))
 			{
 				mixin("record."~structNames[cnt]) = jsonIn[structNames[cnt]].str();
-				pragma(msg,"record."~structNames[cnt]);
+
+				debug(dbg)
+				{
+					pragma(msg,"record."~structNames[cnt]);
+				}
 			}
 			static if(__traits(isSame, mixin(structTypes[cnt]), JSONValue))
 			{
 				mixin("record."~structNames[cnt]) = jsonIn[structNames[cnt]];
-				pragma(msg,"record."~structNames[cnt]);
+
+				debug(dbg)
+				{
+					pragma(msg,"record."~structNames[cnt]);
+				}
 			}
 			static if(__traits(isSame, mixin(structTypes[cnt]), bool))
 			{
 				mixin("record."~structNames[cnt]) = jsonIn[structNames[cnt]].boolean();
-				pragma(msg,"record."~structNames[cnt]);
+
+				debug(dbg)
+				{
+					pragma(msg,"record."~structNames[cnt]);
+				}
 			}
 			//FIXME: Not sure how to get array support going, very new to meta programming
 			static if(__traits(isSame, mixin(structTypes[cnt]), mixin(structTypes[cnt])[]))
 			{
 				mixin("record."~structNames[cnt]) = jsonIn[structNames[cnt]].boolean();
-				pragma(msg,"record."~structNames[cnt]);
+
+				debug(dbg)
+				{
+					pragma(msg,"record."~structNames[cnt]);
+				}
 			}	
 		}
 
@@ -252,7 +277,11 @@ unittest
 
 	Person person = PocketBase.fromJSON!(Person)(json);
 
-	writeln(person);
+	debug(dbg)
+	{
+		writeln(person);	
+	}
+	
 
 	assert(cmp(person.firstname, "Tristan") == 0);
 	assert(cmp(person.lastname, "Kildaire") == 0);
