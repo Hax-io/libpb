@@ -93,6 +93,8 @@ To run tests you will want to enable the `pragma`s and `writeln`s. therefore pas
 dub test -ddbg
 ```
 
+Run pocketbase on the default port and then use the schema provided as `dummy.json` to test with (in a collection named `dummy`).
+
 ## License
 
 See [LICENSE](LICENSE)
