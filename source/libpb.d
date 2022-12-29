@@ -53,8 +53,12 @@ public class PocketBase
 		}
 	}
 
-	public JSONValue createRecord(string, RecordType)(string table, RecordType item)
+	public RecordType createRecord(string, RecordType)(string table, RecordType item)
 	{
+		idAbleCheck(item);
+
+		RecordType recordOut;
+		
 		HTTP httpSettings = HTTP();
 		httpSettings.addRequestHeader("Content-Type", "application/json");
 		
@@ -65,8 +69,10 @@ public class PocketBase
 		{
 			string responseData = cast(string)post(pocketBaseURL~"collections/"~table~"/records", serialized.toString(), httpSettings);
 			JSONValue responseJSON = parseJSON(responseData);
+
+			recordOut = fromJSON!(RecordType)(responseJSON);
 			
-			return responseJSON;
+			return recordOut;
 		}
 		catch(CurlException e)
 		{
@@ -80,6 +86,8 @@ public class PocketBase
 
 	public JSONValue updateRecord(string, RecordType)(string table, RecordType item)
 	{
+		idAbleCheck(record);
+		
 		HTTP httpSettings = HTTP();
 		httpSettings.addRequestHeader("Content-Type", "application/json");
 
@@ -103,6 +111,48 @@ public class PocketBase
 		}
 	}
 
+	public void deleteRecord(string table, string id)
+	{
+		try
+		{
+			del(pocketBaseURL~"collections/"~table~"/records/"~id);
+		}
+		catch(CurlException e)
+		{
+			throw new PBException(PBException.ErrorType.CURL_NETWORK_ERROR, e.msg);
+		}	
+	}
+
+	public static void idAbleCheck(RecordType)(RecordType record)
+	{
+		static if(__traits(hasMember, record, "id"))
+		{
+			static if(__traits(isSame, typeof(record.id), string))
+			{
+				// Do nothing as it is a-okay
+			}
+			else
+			{
+				// Must be a string
+				pragma(msg, "The `id` field of the record provided must be of type string");
+				static assert(false);
+			}
+		}
+		else
+		{
+			// An id field is required (TODO: ensure not a function identifier)
+			pragma(msg, "The provided record must have a `id` field");
+			static assert(false);
+		}
+	}
+
+	//TODO: Here and upate record we must enforce the `.id`
+	public void deleteRecord(string, RecordType)(string table, RecordType record)
+	{
+		idAbleCheck(record);
+		deleteRecord(table, record.id);
+	}
+
 	public static JSONValue serializeRecord(RecordType)(RecordType record)
 	{
 		import std.traits;
@@ -116,8 +166,6 @@ public class PocketBase
 		alias structTypes = FieldTypeTuple!(RecordType);
 		alias structNames = FieldNameTuple!(RecordType);
 		alias structValues = record.tupleof;
-
-		alias bool isBasic;
 
 		static foreach(cnt; 0..structTypes.length)
 		{
@@ -197,19 +245,19 @@ public class PocketBase
 			{
 				mixin("record."~structNames[cnt]) = cast(int)jsonIn[structNames[cnt]].integer();
 			}
-			static if(__traits(isSame, mixin(structTypes[cnt]), uint))
+			else static if(__traits(isSame, mixin(structTypes[cnt]), uint))
 			{
 				mixin("record."~structNames[cnt]) = cast(uint)jsonIn[structNames[cnt]].integer();
 			}
-			static if(__traits(isSame, mixin(structTypes[cnt]), ulong))
+			else static if(__traits(isSame, mixin(structTypes[cnt]), ulong))
 			{
 				mixin("record."~structNames[cnt]) = cast(ulong)jsonIn[structNames[cnt]].integer();
 			}
-			static if(__traits(isSame, mixin(structTypes[cnt]), long))
+			else static if(__traits(isSame, mixin(structTypes[cnt]), long))
 			{
 				mixin("record."~structNames[cnt]) = cast(long)jsonIn[structNames[cnt]].integer();
 			}
-			static if(__traits(isSame, mixin(structTypes[cnt]), string))
+			else static if(__traits(isSame, mixin(structTypes[cnt]), string))
 			{
 				mixin("record."~structNames[cnt]) = jsonIn[structNames[cnt]].str();
 
@@ -218,7 +266,7 @@ public class PocketBase
 					pragma(msg,"record."~structNames[cnt]);
 				}
 			}
-			static if(__traits(isSame, mixin(structTypes[cnt]), JSONValue))
+			else static if(__traits(isSame, mixin(structTypes[cnt]), JSONValue))
 			{
 				mixin("record."~structNames[cnt]) = jsonIn[structNames[cnt]];
 
@@ -227,7 +275,7 @@ public class PocketBase
 					pragma(msg,"record."~structNames[cnt]);
 				}
 			}
-			static if(__traits(isSame, mixin(structTypes[cnt]), bool))
+			else static if(__traits(isSame, mixin(structTypes[cnt]), bool))
 			{
 				mixin("record."~structNames[cnt]) = jsonIn[structNames[cnt]].boolean();
 
@@ -237,7 +285,7 @@ public class PocketBase
 				}
 			}
 			//FIXME: Not sure how to get array support going, very new to meta programming
-			static if(__traits(isSame, mixin(structTypes[cnt]), mixin(structTypes[cnt])[]))
+			else static if(__traits(isSame, mixin(structTypes[cnt]), mixin(structTypes[cnt])[]))
 			{
 				mixin("record."~structNames[cnt]) = jsonIn[structNames[cnt]].boolean();
 
@@ -245,7 +293,16 @@ public class PocketBase
 				{
 					pragma(msg,"record."~structNames[cnt]);
 				}
-			}	
+			}
+			else
+			{
+				// throw new
+				//TODO: Throw error
+				debug(dbg)
+				{
+					pragma(msg, "Unknown type for de-serialization");
+				}
+			}
 		}
 
 		return record;
@@ -334,4 +391,26 @@ unittest
 	assert(person.age == 23);
 	assert(person.isMale == true);
 	//TODO: object test case, list test case
+}
+
+unittest
+{
+	PocketBase pb = new PocketBase();
+
+	struct Person
+	{
+		string id;
+		string name;
+		int age;
+	}
+
+	Person p1 = Person();
+	p1.name = "Tristan Gonzales";
+	p1.age = 23;
+
+	Person recordStored = pb.createRecord("dummy", p1);
+	pb.deleteRecord("dummy", recordStored.id);
+
+	recordStored = pb.createRecord("dummy", p1);
+	pb.deleteRecord("dummy", recordStored);
 }
