@@ -390,7 +390,8 @@ unittest
 	assert(cmp(person.lastname, "Kildaire") == 0);
 	assert(person.age == 23);
 	assert(person.isMale == true);
-	//TODO: object test case, list test case
+	assert(person.obj["bruh"].integer() == 1);
+	//TODO: list test case
 }
 
 unittest
