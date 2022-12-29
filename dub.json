@@ -1,0 +1,9 @@
+{
+	"authors": [
+		"Tristan B. Velloza Kildaire"
+	],
+	"copyright": "Copyright © 2022, Tristan B. Velloza Kildaire",
+	"description": "PocketBase wrapper with serializer/deserializer support",
+	"license": "LGPL v3.0",
+	"name": "libpb"
+}
