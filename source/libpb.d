@@ -84,9 +84,11 @@ public class PocketBase
 		}
 	}
 
-	public JSONValue updateRecord(string, RecordType)(string table, RecordType item)
+	public RecordType updateRecord(string, RecordType)(string table, RecordType item)
 	{
 		idAbleCheck(item);
+
+		RecordType recordOut;
 		
 		HTTP httpSettings = HTTP();
 		httpSettings.addRequestHeader("Content-Type", "application/json");
@@ -98,8 +100,10 @@ public class PocketBase
 		{
 			string responseData = cast(string)patch(pocketBaseURL~"collections/"~table~"/records/"~item.id, serialized.toString(), httpSettings);
 			JSONValue responseJSON = parseJSON(responseData);
+
+			recordOut = fromJSON!(RecordType)(responseJSON);
 			
-			return responseJSON;
+			return recordOut;
 		}
 		catch(CurlException e)
 		{
@@ -418,7 +422,8 @@ unittest
 	recordStored = pb.createRecord("dummy", p1);
 	Thread.sleep(dur!("seconds")(3));
 	recordStored.age = 46;
-	pb.updateRecord("dummy", recordStored);
+	recordStored = pb.updateRecord("dummy", recordStored);
+	assert(recordStored.age == 46);
 	Thread.sleep(dur!("seconds")(3));
 
 	pb.deleteRecord("dummy", recordStored);
