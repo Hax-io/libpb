@@ -159,7 +159,10 @@ public class PocketBase
 			}
 			else
 			{
-				pragma(msg, "Yaa");
+				debug(dbg)
+				{
+					pragma(msg, "Yaa");	
+				}
 				builtJSON[structNames[cnt]] = to!(string)(structValues[cnt]);
 			}
 		}
