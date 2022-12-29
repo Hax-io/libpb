@@ -1,3 +1,5 @@
+module libpb;
+
 import std.json;
 import std.stdio;
 import std.net.curl;
