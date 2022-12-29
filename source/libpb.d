@@ -84,6 +84,29 @@ public class PocketBase
 		}
 	}
 
+	public RecordType viewRecord(RecordType)(string table, string id)
+	{
+		RecordType recordOut;
+
+		try
+		{
+			string responseData = cast(string)get(pocketBaseURL~"collections/"~table~"/records/"~id);
+			JSONValue responseJSON = parseJSON(responseData);
+
+			recordOut = fromJSON!(RecordType)(responseJSON);
+			
+			return recordOut;
+		}
+		catch(CurlException e)
+		{
+			throw new PBException(PBException.ErrorType.CURL_NETWORK_ERROR, e.msg);
+		}
+		catch(JSONException e)
+		{
+			throw new PBException(PBException.ErrorType.JSON_PARSE_ERROR, e.msg);
+		}
+	}
+
 	public RecordType updateRecord(string, RecordType)(string table, RecordType item)
 	{
 		idAbleCheck(item);
@@ -401,6 +424,7 @@ unittest
 unittest
 {
 	import core.thread : Thread, dur;
+	import std.string : cmp;
 	
 	PocketBase pb = new PocketBase();
 
@@ -425,6 +449,11 @@ unittest
 	recordStored = pb.updateRecord("dummy", recordStored);
 	assert(recordStored.age == 46);
 	Thread.sleep(dur!("seconds")(3));
+
+	Person recordFetched = pb.viewRecord!(Person)("dummy", recordStored.id);
+	assert(recordFetched.age == 46);
+	assert(cmp(recordFetched.name, "Tristan Gonzales") == 0);
+	assert(cmp(recordFetched.id, recordStored.id) == 0);
 
 	pb.deleteRecord("dummy", recordStored);
 }
