@@ -5,32 +5,61 @@ import std.stdio;
 import std.net.curl;
 import std.conv : to;
 
-public final class PBException : Exception
-{
-	public enum ErrorType
+public class PBException : Exception
+{	
+	this()
 	{
-		CURL_NETWORK_ERROR,
-		JSON_PARSE_ERROR
+		super("bruh todo");
 	}
+}
 
-	private ErrorType errType;
-	
-	this(ErrorType errType, string msg)
+public final class RecordNotFoundException : PBException
+{
+	public const string offendingTable;
+	public const string offendingId;
+	this(string table, string id)
 	{
-		this.errType = errType;
-		super("PBException("~to!(string)(errType)~"): "~msg);
+		this.offendingTable = table;
+		this.offendingId = id;
 	}
+}
+
+public final class NetworkException : PBException
+{
+	this()
+	{
+
+	}
+}
+
+public final class PocketBaseParsingException : PBException
+{
+
 }
 
 public class PocketBase
 {
 	private string pocketBaseURL;
 	
+	/** 
+	 * Constructs a new PocketBase instance with
+	 * the default settings
+	 */
 	this(string pocketBaseURL = "http://127.0.0.1:8090/api/")
 	{
 		this.pocketBaseURL = pocketBaseURL;
 	}
 
+	/** 
+	 * List all of the records in the given table
+	 *
+	 * Params:
+	 *   table = the table to list from
+	 *   page = the page to look at (default is 1)
+	 *   perPage = the number of items to return per page (default is 30)
+	 *
+	 * Returns: A list of type <code>RecordType</code>
+	 */
 	public RecordType[] listRecords(RecordType)(string table, ulong page = 1, ulong perPage = 30)
 	{
 		RecordType[] recordsOut;
@@ -52,14 +81,23 @@ public class PocketBase
 		}
 		catch(CurlException e)
 		{
-			throw new PBException(PBException.ErrorType.CURL_NETWORK_ERROR, e.msg);
+			throw new NetworkException();
 		}
 		catch(JSONException e)
 		{
-			throw new PBException(PBException.ErrorType.JSON_PARSE_ERROR, e.msg);
+			throw new PocketBaseParsingException();
 		}
 	}
 
+	/** 
+	 * Creates a record in the given table
+	 *
+	 * Params:
+	 *   table = the table to create the record in
+	 *   item = The Record to create
+	 *
+	 * Returns: An instance of the created <code>RecordType</code>
+	 */
 	public RecordType createRecord(string, RecordType)(string table, RecordType item)
 	{
 		idAbleCheck(item);
@@ -83,14 +121,23 @@ public class PocketBase
 		}
 		catch(CurlException e)
 		{
-			throw new PBException(PBException.ErrorType.CURL_NETWORK_ERROR, e.msg);
+			throw new NetworkException();
 		}
 		catch(JSONException e)
 		{
-			throw new PBException(PBException.ErrorType.JSON_PARSE_ERROR, e.msg);
+			throw new PocketBaseParsingException();
 		}
 	}
 
+	/** 
+	 * View the given record by id
+	 *
+	 * Params:
+	 *   table = the table to lookup the record in
+	 *   id = the id to lookup the record by
+	 *
+	 * Returns: The found record of type <code>RecordType</code>
+	 */
 	public RecordType viewRecord(RecordType)(string table, string id)
 	{
 		RecordType recordOut;
@@ -104,16 +151,38 @@ public class PocketBase
 			
 			return recordOut;
 		}
+		catch(HTTPStatusException e)
+		{
+			if(e.status == 404)
+			{
+				throw new RecordNotFoundException(table, id);
+			}
+			else
+			{
+				// TODO: Fix this
+				throw new NetworkException();
+			}
+		}
 		catch(CurlException e)
 		{
-			throw new PBException(PBException.ErrorType.CURL_NETWORK_ERROR, e.msg);
+			throw new NetworkException();
 		}
 		catch(JSONException e)
 		{
-			throw new PBException(PBException.ErrorType.JSON_PARSE_ERROR, e.msg);
+			throw new PocketBaseParsingException();
 		}
 	}
 
+	/** 
+	 * Updates the given record in the given table, returning the
+	 * updated record
+	 *
+	 * Params:
+	 *   table = tabe table to update the record in
+	 *   item = the record of type <code>RecordType</code> to update
+	 *
+	 * Returns: The updated <code>RecordType</code>
+	 */
 	public RecordType updateRecord(string, RecordType)(string table, RecordType item)
 	{
 		idAbleCheck(item);
@@ -135,26 +204,70 @@ public class PocketBase
 			
 			return recordOut;
 		}
+		catch(HTTPStatusException e)
+		{
+			if(e.status == 404)
+			{
+				throw new RecordNotFoundException(table, item.id);
+			}
+			else
+			{
+				// TODO: Fix this
+				throw new NetworkException();
+			}
+		}
 		catch(CurlException e)
 		{
-			throw new PBException(PBException.ErrorType.CURL_NETWORK_ERROR, e.msg);
+			throw new NetworkException();
 		}
 		catch(JSONException e)
 		{
-			throw new PBException(PBException.ErrorType.JSON_PARSE_ERROR, e.msg);
+			throw new PocketBaseParsingException();
 		}
 	}
 
+	/** 
+	 * Deletes the provided record by id from the given table
+	 *
+	 * Params:
+	 *   table = the table to delete the record from
+	 *   id = the id of the record to delete
+	 */
 	public void deleteRecord(string table, string id)
 	{
 		try
 		{
 			del(pocketBaseURL~"collections/"~table~"/records/"~id);
 		}
+		catch(HTTPStatusException e)
+		{
+			if(e.status == 404)
+			{
+				throw new RecordNotFoundException(table, id);
+			}
+			else
+			{
+				// TODO: Fix this
+				throw new NetworkException();
+			}
+		}
 		catch(CurlException e)
 		{
-			throw new PBException(PBException.ErrorType.CURL_NETWORK_ERROR, e.msg);
-		}	
+			throw new NetworkException();
+		}
+	}
+
+	/** 
+	 * Deletes the provided record from the given table
+	 *
+	 * Params:
+	 *   table = the table to delete from
+	 *   record = the record of type <code>RecordType</code> to delete
+	 */
+	public void deleteRecord(string, RecordType)(string table, RecordType record)
+	{
+		idAbleCheck(record);
+		deleteRecord(table, record.id);
 	}
 
 	public static void idAbleCheck(RecordType)(RecordType record)
@@ -180,14 +293,8 @@ public class PocketBase
 		}
 	}
 
-	//TODO: Here and upate record we must enforce the `.id`
-	public void deleteRecord(string, RecordType)(string table, RecordType record)
-	{
-		idAbleCheck(record);
-		deleteRecord(table, record.id);
-	}
-
-	public void stream(string table)
+	// TODO: Implement the streaming functionality
+	private void stream(string table)
 	{
 		
 	}
@@ -483,5 +590,47 @@ unittest
 			writeln(returnedPerson);
 		}
 		pb.deleteRecord("dummy", returnedPerson);
+	}
+
+	try
+	{
+		recordFetched = pb.viewRecord!(Person)("dummy", people[0].id);
+		assert(false);
+	}
+	catch(RecordNotFoundException e)
+	{
+		assert(cmp(e.offendingTable, "dummy") == 0 && e.offendingId == people[0].id);
+	}
+	catch(Exception e)
+	{
+		assert(false);
+	}
+
+	try
+	{
+		recordFetched = pb.updateRecord("dummy", people[0]);
+		assert(false);
+	}
+	catch(RecordNotFoundException e)
+	{
+		assert(cmp(e.offendingTable, "dummy") == 0 && e.offendingId == people[0].id);
+	}
+	catch(Exception e)
+	{
+		assert(false);
+	}
+
+	try
+	{
+		pb.deleteRecord("dummy", people[0]);
+		assert(false);
+	}
+	catch(RecordNotFoundException e)
+	{
+		assert(cmp(e.offendingTable, "dummy") == 0 && e.offendingId == people[0].id);
+	}
+	catch(Exception e)
+	{
+		assert(false);
 	}
 }
