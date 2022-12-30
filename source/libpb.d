@@ -182,7 +182,6 @@ public class PocketBase
 		}
 		catch(JSONException e)
 		{
-			writeln(e);
 			throw new PocketBaseParsingException();
 		}
 	}
