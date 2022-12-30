@@ -423,7 +423,6 @@ unittest
 	{
 		writeln(person);	
 	}
-	
 
 	assert(cmp(person.firstname, "Tristan") == 0);
 	assert(cmp(person.lastname, "Kildaire") == 0);
@@ -479,7 +478,10 @@ unittest
 	Person[] returnedPeople = pb.listRecords!(Person)("dummy");
 	foreach(Person returnedPerson; returnedPeople)
 	{
-		writeln(returnedPerson);
+		debug(dbg)
+		{
+			writeln(returnedPerson);
+		}
 		pb.deleteRecord("dummy", returnedPerson);
 	}
 }
