@@ -24,6 +24,30 @@ public final class RecordNotFoundException : PBException
 	}
 }
 
+public final class NotAuthorized : PBException
+{
+	public const string offendingTable;
+	public const string offendingId;
+	this(string table, string id)
+	{
+		this.offendingTable = table;
+		this.offendingId = id;
+	}
+}
+
+public final class ValidationRequired : PBException
+{
+	public const string offendingTable;
+	public const string offendingId;
+	this(string table, string id)
+	{
+		this.offendingTable = table;
+		this.offendingId = id;
+	}
+}
+
+
+
 public final class NetworkException : PBException
 {
 	this()
@@ -119,6 +143,22 @@ public class PocketBase
 			
 			return recordOut;
 		}
+		catch(HTTPStatusException e)
+		{
+			if(e.status == 403)
+			{
+				throw new NotAuthorized(table, item.id);
+			}
+			else if(e.status == 400)
+			{
+				throw new ValidationRequired(table, item.id);
+			}
+			else
+			{
+				// TODO: Fix this
+				throw new NetworkException();
+			}
+		}
 		catch(CurlException e)
 		{
 			throw new NetworkException();
@@ -209,6 +249,14 @@ public class PocketBase
 			if(e.status == 404)
 			{
 				throw new RecordNotFoundException(table, item.id);
+			}
+			else if(e.status == 403)
+			{
+				throw new NotAuthorized(table, item.id);
+			}
+			else if(e.status == 400)
+			{
+				throw new ValidationRequired(table, item.id);
 			}
 			else
 			{
