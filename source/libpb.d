@@ -4,6 +4,7 @@ import std.json;
 import std.stdio;
 import std.net.curl;
 import std.conv : to;
+import std.string : cmp;
 
 public class PBException : Exception
 {	
@@ -122,7 +123,7 @@ public class PocketBase
 	 *
 	 * Returns: An instance of the created <code>RecordType</code>
 	 */
-	public RecordType createRecord(string, RecordType)(string table, RecordType item)
+	public RecordType createRecord(string, RecordType)(string table, RecordType item, bool isAuthCollection = false)
 	{
 		idAbleCheck(item);
 
@@ -138,7 +139,23 @@ public class PocketBase
 		{
 			string responseData = cast(string)post(pocketBaseURL~"collections/"~table~"/records", serialized.toString(), httpSettings);
 			JSONValue responseJSON = parseJSON(responseData);
-
+			
+			// On creation of a record in an "auth" collection the email visibility
+			// will initially be false, therefore fill in a blank for it temporarily
+			// now as to not make `fromJSON` crash when it sees an email field in
+			// a struct and tries to look the the JSON key "email" when it isn't present
+			//
+			// A password is never returned (so `password` and `passwordConfirm` will be left out)
+			//
+			// The above are all assumed to be strings, if not then a runtime error will occur
+			// See (issue #3)
+			if(isAuthCollection)
+			{
+				responseJSON["email"] = "";
+				responseJSON["password"] = "";
+				responseJSON["passwordConfirm"] = "";
+			}
+			
 			recordOut = fromJSON!(RecordType)(responseJSON);
 			
 			return recordOut;
@@ -165,6 +182,7 @@ public class PocketBase
 		}
 		catch(JSONException e)
 		{
+			writeln(e);
 			throw new PocketBaseParsingException();
 		}
 	}
@@ -681,4 +699,30 @@ unittest
 	{
 		assert(false);
 	}
+}
+
+unittest
+{
+	import core.thread : Thread, dur;
+	import std.string : cmp;
+	
+	PocketBase pb = new PocketBase();
+
+	struct Person
+	{
+		string id;
+		string email;
+		string username;
+		string password;
+		string passwordConfirm;
+	}
+
+	Person p1;
+	p1.email = "deavmi@redxen.eu";
+	p1.username = "deavmi";
+	p1.password = "bigbruh1111";
+	p1.passwordConfirm = "bigbruh1111";
+
+	p1 = pb.createRecord("dummy_auth", p1, true);
+	pb.deleteRecord("dummy_auth", p1);
 }

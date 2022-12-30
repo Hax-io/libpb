@@ -1,4 +1,5 @@
-{
+[
+    {
         "id": "iir9gleipa4n6lf",
         "name": "dummy",
         "type": "base",
@@ -36,5 +37,41 @@
         "updateRule": "",
         "deleteRule": "",
         "options": {}
+    },
+    {
+        "id": "fw99z50dwcfjwn7",
+        "name": "dummy_auth",
+        "type": "auth",
+        "system": false,
+        "schema": [
+            {
+                "id": "psy7unkl",
+                "name": "bruh",
+                "type": "text",
+                "system": false,
+                "required": false,
+                "unique": false,
+                "options": {
+                    "min": null,
+                    "max": null,
+                    "pattern": ""
+                }
+            }
+        ],
+        "listRule": "",
+        "viewRule": "",
+        "createRule": "",
+        "updateRule": "",
+        "deleteRule": "",
+        "options": {
+            "allowEmailAuth": true,
+            "allowOAuth2Auth": false,
+            "allowUsernameAuth": true,
+            "exceptEmailDomains": null,
+            "manageRule": null,
+            "minPasswordLength": 8,
+            "onlyEmailDomains": null,
+            "requireEmail": false
+        }
     }
-}
+]
