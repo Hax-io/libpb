@@ -31,8 +31,10 @@ public class PocketBase
 		this.pocketBaseURL = pocketBaseURL;
 	}
 
-	public JSONValue listRecords(string table, ulong page = 1, ulong perPage = 30)
+	public RecordType[] listRecords(RecordType)(string table, ulong page = 1, ulong perPage = 30)
 	{
+		RecordType[] recordsOut;
+
 		// Compute the query string
 		string queryStr = "page="~to!(string)(page)~"&perPage="~to!(string)(perPage);
 		
@@ -40,8 +42,13 @@ public class PocketBase
 		{
 			string responseData = cast(string)get(pocketBaseURL~"collections/"~table~"/records?"~queryStr);
 			JSONValue responseJSON = parseJSON(responseData);
+			JSONValue[] returnedItems = responseJSON["items"].array();
+			foreach(JSONValue returnedItem; returnedItems)
+			{
+				recordsOut ~= fromJSON!(RecordType)(returnedItem);
+			}
 			
-			return responseJSON;
+			return recordsOut;
 		}
 		catch(CurlException e)
 		{
@@ -178,6 +185,11 @@ public class PocketBase
 	{
 		idAbleCheck(record);
 		deleteRecord(table, record.id);
+	}
+
+	public void stream(string table)
+	{
+		
 	}
 
 	public static JSONValue serializeRecord(RecordType)(RecordType record)
@@ -456,4 +468,18 @@ unittest
 	assert(cmp(recordFetched.id, recordStored.id) == 0);
 
 	pb.deleteRecord("dummy", recordStored);
+
+	Person[] people = [Person(), Person()];
+	people[0].name = "Abby";
+	people[1].name = "Becky";
+
+	people[0] = pb.createRecord("dummy", people[0]);
+	people[1] = pb.createRecord("dummy", people[1]);
+
+	Person[] returnedPeople = pb.listRecords!(Person)("dummy");
+	foreach(Person returnedPerson; returnedPeople)
+	{
+		writeln(returnedPerson);
+		pb.deleteRecord("dummy", returnedPerson);
+	}
 }
