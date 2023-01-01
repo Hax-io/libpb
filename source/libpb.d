@@ -85,12 +85,13 @@ public class PocketBase
 	 *
 	 * Returns: A list of type <code>RecordType</code>
 	 */
-	public RecordType[] listRecords(RecordType)(string table, ulong page = 1, ulong perPage = 30)
+	public RecordType[] listRecords(RecordType)(string table, ulong page = 1, ulong perPage = 30, string filter = "")
 	{
 		RecordType[] recordsOut;
 
 		// Compute the query string
 		string queryStr = "page="~to!(string)(page)~"&perPage="~to!(string)(perPage);
+		queryStr ~= cmp(filter, "") == 0 ? "" : "&filter="~filter;
 		
 		try
 		{
@@ -724,4 +725,34 @@ unittest
 
 	p1 = pb.createRecord("dummy_auth", p1, true);
 	pb.deleteRecord("dummy_auth", p1);
+}
+
+unittest
+{
+	import core.thread : Thread, dur;
+	import std.string : cmp;
+	
+	PocketBase pb = new PocketBase();
+
+	struct Person
+	{
+		string id;
+		string name;
+		int age;
+	}
+
+	Person p1 = Person();
+	p1.name = "Tristan Gonzales";
+	p1.age = 23;
+
+	Person p2 = Person();
+	p2.name = p1.name;
+	p2.age = p1.age;
+
+	p1 = pb.createRecord("dummy", p1);
+	p2 = pb.createRecord("dummy", p2);
+
+	Person[] people = pb.listRecords!(Person)("dummy", 1, 30, "(id='"~p1.id~"')");
+	assert(people.length == 1);
+	assert(cmp(people[0].id, p1.id) == 0);
 }
