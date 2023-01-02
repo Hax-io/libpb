@@ -62,17 +62,50 @@ public final class PocketBaseParsingException : PBException
 
 }
 
+
+mixin template AuthTokenHeader(alias http, PocketBase pbInstance)
+{
+	// Must be an instance of HTTP from `std.curl`
+	static assert(__traits(isSame, typeof(http), HTTP));
+	
+	void InitializeAuthHeader()
+	{
+		// Check if the given PocketBase instance as an authToken
+		if(pbInstance.authToken.length > 0)
+		{
+			// Then add the authaorization header
+			http.addRequestHeader("Authorization", pbInstance.getAuthToken());
+		}
+	}
+	
+}
+
 public class PocketBase
 {
 	private string pocketBaseURL;
+	private string authToken;
 	
 	/** 
 	 * Constructs a new PocketBase instance with
 	 * the default settings
 	 */
-	this(string pocketBaseURL = "http://127.0.0.1:8090/api/")
+	this(string pocketBaseURL = "http://127.0.0.1:8090/api/", string authToken = "")
 	{
 		this.pocketBaseURL = pocketBaseURL;
+		this.authToken = authToken;
+	}
+
+	public void setAuthToken(string authToken)
+	{
+		if(cmp(authToken, "") != 0)
+		{
+			this.authToken = authToken;	
+		}
+	}
+
+	public string getAuthToken()
+	{
+		return this.authToken;
 	}
 
 	/** 
@@ -87,6 +120,11 @@ public class PocketBase
 	 */
 	public RecordType[] listRecords(RecordType)(string table, ulong page = 1, ulong perPage = 30, string filter = "")
 	{
+		// Set authorization token if setup
+		HTTP httpSettings = HTTP();
+		mixin AuthTokenHeader!(httpSettings, this);
+		InitializeAuthHeader();
+				
 		RecordType[] recordsOut;
 
 		// Compute the query string
@@ -117,7 +155,7 @@ public class PocketBase
 		
 		try
 		{
-			string responseData = cast(string)get(pocketBaseURL~"collections/"~table~"/records?"~queryStr);
+			string responseData = cast(string)get(pocketBaseURL~"collections/"~table~"/records?"~queryStr, httpSettings);
 			JSONValue responseJSON = parseJSON(responseData);
 			JSONValue[] returnedItems = responseJSON["items"].array();
 			foreach(JSONValue returnedItem; returnedItems)
@@ -126,6 +164,17 @@ public class PocketBase
 			}
 			
 			return recordsOut;
+		}
+		catch(HTTPStatusException e)
+		{
+			if(e.status == 403)
+			{
+				throw new NotAuthorized(table, null);
+			}
+			else
+			{
+				throw new NetworkException();
+			}
 		}
 		catch(CurlException e)
 		{
@@ -158,7 +207,12 @@ public class PocketBase
 
 		RecordType recordOut;
 		
+		// Set authorization token if setup
 		HTTP httpSettings = HTTP();
+		mixin AuthTokenHeader!(httpSettings, this);
+		InitializeAuthHeader();
+
+		// Set the content type
 		httpSettings.addRequestHeader("Content-Type", "application/json");
 		
 		// Serialize the record instance
@@ -228,9 +282,14 @@ public class PocketBase
 	{
 		RecordType recordOut;
 
+		// Set authorization token if setup
+		HTTP httpSettings = HTTP();
+		mixin AuthTokenHeader!(httpSettings, this);
+		InitializeAuthHeader();
+
 		try
 		{
-			string responseData = cast(string)get(pocketBaseURL~"collections/"~table~"/records/"~id);
+			string responseData = cast(string)get(pocketBaseURL~"collections/"~table~"/records/"~id, httpSettings);
 			JSONValue responseJSON = parseJSON(responseData);
 
 			recordOut = fromJSON!(RecordType)(responseJSON);
@@ -274,8 +333,13 @@ public class PocketBase
 		idAbleCheck(item);
 
 		RecordType recordOut;
-		
+
+		// Set authorization token if setup
 		HTTP httpSettings = HTTP();
+		mixin AuthTokenHeader!(httpSettings, this);
+		InitializeAuthHeader();
+
+		// Set the content type
 		httpSettings.addRequestHeader("Content-Type", "application/json");
 
 		// Serialize the record instance
@@ -329,9 +393,14 @@ public class PocketBase
 	 */
 	public void deleteRecord(string table, string id)
 	{
+		// Set authorization token if setup
+		HTTP httpSettings = HTTP();
+		mixin AuthTokenHeader!(httpSettings, this);
+		InitializeAuthHeader();
+		
 		try
 		{
-			del(pocketBaseURL~"collections/"~table~"/records/"~id);
+			del(pocketBaseURL~"collections/"~table~"/records/"~id, httpSettings);
 		}
 		catch(HTTPStatusException e)
 		{
