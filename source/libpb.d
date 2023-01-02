@@ -114,8 +114,6 @@ public class PocketBase
 
 		// Append the filter
 		queryStr ~= cmp(filter, "") == 0 ? "" : "&filter="~filter;
-
-		writeln(queryStr);
 		
 		try
 		{
