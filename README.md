@@ -7,6 +7,8 @@ libpb
 
 ## Example usage
 
+View the full API documentation (methods etc.) [here](https://libpb.dpldocs.info/libpb.html).
+
 ### Server initiation
 
 Firstly we create a new PocketBase instance to manage our server:
