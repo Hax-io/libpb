@@ -42,7 +42,7 @@ p1.list = ["1", "2", "3"];
 p1.extraJSON = parseJSON(`{"item":1, "items":[1,2,3]}`);
 p1.eType = EnumType.CAT;
 
-JSONValue serialized = PocketBase.serializeRecord(p1);
+JSONValue serialized = serializeRecord(p1);
 
 string[] keys = serialized.object().keys();
 assert(canFind(keys, "firstname") && cmp(serialized["firstname"].str(), "Tristan") == 0);
@@ -81,7 +81,7 @@ JSONValue json = parseJSON(`{
 }
 `);
 
-Person person = PocketBase.fromJSON!(Person)(json);
+Person person = fromJSON!(Person)(json);
 
 debug(dbg)
 {
