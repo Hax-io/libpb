@@ -67,7 +67,7 @@ public JSONValue serializeRecord(RecordType)(RecordType record)
 }
 
 // Test serialization of a struct to JSON
-public enum EnumType
+private enum EnumType
 {
 	DOG,
 	CAT
