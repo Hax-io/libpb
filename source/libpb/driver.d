@@ -380,7 +380,7 @@ public class PocketBase
 		deleteRecord(table, record.id);
 	}
 
-	public static void idAbleCheck(RecordType)(RecordType record)
+	private static void idAbleCheck(RecordType)(RecordType record)
 	{
 		static if(__traits(hasMember, record, "id"))
 		{
