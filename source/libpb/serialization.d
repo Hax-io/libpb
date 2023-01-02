@@ -2,20 +2,12 @@ module libpb.serialization;
 
 import std.json;
 import std.conv : to;
-
-debug(dbg)
-{
-	import std.stdio : writeln;
-}
+import std.traits : FieldTypeTuple, FieldNameTuple;
 
 public JSONValue serializeRecord(RecordType)(RecordType record)
-{
-	import std.traits;
-	import std.meta : AliasSeq;
-		
+{		
 	// Final JSON to submit
 	JSONValue builtJSON;
-
 
 	// Alias as to only expand later when used in compile-time
 	alias structTypes = FieldTypeTuple!(RecordType);
@@ -84,6 +76,7 @@ unittest
 {
 	import std.algorithm.searching : canFind;
 	import std.string : cmp;
+	import std.stdio : writeln;
 	
 	struct Person
 	{
