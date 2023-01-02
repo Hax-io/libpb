@@ -91,7 +91,31 @@ public class PocketBase
 
 		// Compute the query string
 		string queryStr = "page="~to!(string)(page)~"&perPage="~to!(string)(perPage);
+
+		// If there is a filter then perform the needed escaping
+		if(cmp(filter, "") != 0)
+		{
+			// For the filter, make sure to add URL escaping to the `filter` parameter
+			import etc.c.curl : curl_escape;
+			import std.string : toStringz, fromStringz;
+			char* escapedParameter = curl_escape(toStringz(filter), cast(int)filter.length);
+			if(escapedParameter is null)
+			{
+				debug(dbg)
+				{
+					writeln("Invalid return from curl_easy_escape");
+				}
+				throw new PBException();
+			}
+
+			// Convert back to D-string (the filter)
+			filter = cast(string)fromStringz(escapedParameter);
+		}
+
+		// Append the filter
 		queryStr ~= cmp(filter, "") == 0 ? "" : "&filter="~filter;
+
+		writeln(queryStr);
 		
 		try
 		{
@@ -107,6 +131,12 @@ public class PocketBase
 		}
 		catch(CurlException e)
 		{
+			debug(dbg)
+			{
+				writeln("curl");
+				writeln(e);
+			}
+			
 			throw new NetworkException();
 		}
 		catch(JSONException e)
@@ -746,7 +776,7 @@ unittest
 	p1.age = 23;
 
 	Person p2 = Person();
-	p2.name = p1.name;
+	p2.name = p1.name~"2";
 	p2.age = p1.age;
 
 	p1 = pb.createRecord("dummy", p1);
@@ -755,4 +785,16 @@ unittest
 	Person[] people = pb.listRecords!(Person)("dummy", 1, 30, "(id='"~p1.id~"')");
 	assert(people.length == 1);
 	assert(cmp(people[0].id, p1.id) == 0);
+
+	pb.deleteRecord("dummy", p1);
+	people = pb.listRecords!(Person)("dummy", 1, 30, "(id='"~p1.id~"')");
+	assert(people.length == 0);
+
+	people = pb.listRecords!(Person)("dummy", 1, 30, "(id='"~p2.id~"' && age=24)");
+	assert(people.length == 0);
+
+	people = pb.listRecords!(Person)("dummy", 1, 30, "(id='"~p2.id~"' && age=23)");
+	assert(people.length == 1 && cmp(people[0].id, p2.id) == 0);
+	
+	pb.deleteRecord("dummy", p2);
 }

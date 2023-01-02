@@ -6,5 +6,6 @@
 	"description": "PocketBase wrapper with serializer/deserializer support",
 	"license": "LGPL v3.0",
 	"name": "libpb",
-	"targetType" : "library"
+	"targetType" : "library",
+	"libs":["curl"]
 }

@@ -173,6 +173,11 @@ pb.deleteRecord("dummy_auth", p1);
 
 ## Development
 
+### Dependencies
+
+This requires that you have the `libcurl` libraries available for
+linking against.
+
 ### Unit tests
 
 To run tests you will want to enable the `pragma`s and `writeln`s. therefore pass the `dbg` flag in as such:
