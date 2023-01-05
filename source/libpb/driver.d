@@ -247,8 +247,19 @@ public class PocketBase
 		}
 	}
 
-
-	// TODO: Add comment
+	/** 
+	 * Authenticates on the given auth table with the provided
+	 * credentials, returning a JWT token in the reference parameter.
+	 * Finally returning the record of the authenticated user.
+	 *
+	 * Params:
+	 *   table = the auth collection to use
+	 *   identity = the user's identity
+	 *   password = the user's password
+	 *   token = the variable to return into
+	 *
+	 * Returns: An instance of `RecordType`
+	 */
 	public RecordType authWithPassword(RecordType)(string table, string identity, string password, ref string token)
 	{
 		mixin isAuthable!(RecordType);
