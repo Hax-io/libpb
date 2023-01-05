@@ -169,7 +169,7 @@ p1.username = "deavmi";
 p1.password = "bigbruh1111";
 p1.passwordConfirm = "bigbruh1111";
 
-p1 = pb.createRecord("dummy_auth", p1, true);
+p1 = pb.createRecordAuth("dummy_auth", p1);
 pb.deleteRecord("dummy_auth", p1);
 ```
 
