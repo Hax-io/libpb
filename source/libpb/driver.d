@@ -589,7 +589,7 @@ public class PocketBase
 		deleteRecord(table, record.id);
 	}
 
-	mixin template MemberAndType(alias record, alias typeEnforce, string memberName)
+	private mixin template MemberAndType(alias record, alias typeEnforce, string memberName)
 	{
 		static if(__traits(hasMember, record, memberName))
 		{
