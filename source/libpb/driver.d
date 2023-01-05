@@ -150,6 +150,19 @@ public class PocketBase
 	 */
 	public RecordType createRecord(string, RecordType)(string table, RecordType item, bool isAuthCollection = false)
 	{
+		debug(dbg)
+		{
+			writeln(item);
+			writeln("isAuthCollection: ", isAuthCollection);
+		}
+
+		//TODO: Implement me, this is always getting triggered for some reason, well makes sense
+		//it is triggered at compile time to check, we should probably make a seperate method `createRecordAuth()`
+		if(isAuthCollection)
+		{
+			// mixin isAuthable!(RecordType);
+		}
+		
 		idAbleCheck(item);
 
 		RecordType recordOut;
@@ -199,6 +212,71 @@ public class PocketBase
 			else if(e.status == 400)
 			{
 				throw new ValidationRequired(table, item.id);
+			}
+			else
+			{
+				// TODO: Fix this
+				throw new NetworkException();
+			}
+		}
+		catch(CurlException e)
+		{
+			throw new NetworkException();
+		}
+		catch(JSONException e)
+		{
+			throw new PocketBaseParsingException();
+		}
+	}
+
+
+	// TODO: Add comment
+	public RecordType authWithPassword(RecordType)(string table, string identity, string password, ref string token)
+	{
+		mixin isAuthable!(RecordType);
+
+		RecordType recordOut;
+
+		// Set the content type
+		HTTP httpSettings = HTTP();
+		httpSettings.addRequestHeader("Content-Type", "application/json");
+
+		// Construct the authentication record
+		JSONValue authRecord;
+		authRecord["identity"] = identity;
+		authRecord["password"] = password;
+
+		try
+		{
+			string responseData = cast(string)post(pocketBaseURL~"collections/"~table~"/auth-with-password", authRecord.toString(), httpSettings);
+			JSONValue responseJSON = parseJSON(responseData);
+			JSONValue recordResponse = responseJSON["record"];
+
+			// In the case we are doing auth, we won't get password, passwordConfirm sent back
+			// set them to empty
+			recordResponse["password"] = "";
+			recordResponse["passwordConfirm"] = "";
+
+			// If email is invisible make a fake field to prevent crash
+			if(!recordResponse["emailVisibility"].boolean())
+			{
+				recordResponse["email"] = "";
+			}
+
+
+			recordOut = fromJSON!(RecordType)(recordResponse);
+
+			// Store the token
+			token = responseJSON["token"].str();
+			
+			return recordOut;
+		}
+		catch(HTTPStatusException e)
+		{
+			if(e.status == 400)
+			{
+				// TODO: Update this error
+				throw new NotAuthorized(table, null);
 			}
 			else
 			{
@@ -380,6 +458,34 @@ public class PocketBase
 		deleteRecord(table, record.id);
 	}
 
+	mixin template MemberAndType(alias record, alias typeEnforce, string memberName)
+	{
+		static if(__traits(hasMember, record, memberName))
+		{
+			static if(__traits(isSame, typeof(mixin("record."~memberName)), typeEnforce))
+			{
+
+			}
+			else
+			{
+				pragma(msg, "Member '"~memberName~"' not of type '"~typeEnforce~"'");
+				static assert(false);
+			}
+		}
+		else
+		{
+			pragma(msg, "Record does not have member '"~memberName~"'");
+			static assert(false);
+		}
+	}
+
+	private static void isAuthable(RecordType)(RecordType record)
+	{
+		mixin MemberAndType!(record, string, "email");
+		mixin MemberAndType!(record, string, "password");
+		mixin MemberAndType!(record, string, "passwordConfirm");
+	}
+
 	private static void idAbleCheck(RecordType)(RecordType record)
 	{
 		static if(__traits(hasMember, record, "id"))
@@ -520,15 +626,40 @@ unittest
 		string username;
 		string password;
 		string passwordConfirm;
+		string name;
+		int age;
 	}
+
+	// Set the password to use
+	string passwordToUse = "bigbruh1111";
 
 	Person p1;
 	p1.email = "deavmi@redxen.eu";
 	p1.username = "deavmi";
-	p1.password = "bigbruh1111";
-	p1.passwordConfirm = "bigbruh1111";
+	p1.password = passwordToUse;
+	p1.passwordConfirm = passwordToUse;
+	p1.name = "Tristaniha";
+	p1.age = 29;
 
 	p1 = pb.createRecord("dummy_auth", p1, true);
+
+
+	string tokenIn;
+	Person authPerson = pb.authWithPassword!(Person)("dummy_auth", p1.username, passwordToUse, tokenIn);
+
+	// Ensure a non-empty token
+	assert(cmp(tokenIn, "") != 0);
+	writeln("Token: "~tokenIn);
+
+	// Ensure we get our person back
+	assert(cmp(authPerson.name, p1.name) == 0);
+	assert(authPerson.age == p1.age);
+	assert(cmp(authPerson.email, p1.email) == 0);
+
+
+
+
+
 	pb.deleteRecord("dummy_auth", p1);
 }
 
