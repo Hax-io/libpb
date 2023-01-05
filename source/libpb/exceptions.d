@@ -44,7 +44,11 @@ public final class ValidationRequired : PBException
 }
 
 
-
+/** 
+ * NetworkException
+ *
+ * Thrown on an unhandled curl error
+ */
 public final class NetworkException : PBException
 {
 	this()
