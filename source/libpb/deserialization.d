@@ -21,18 +21,33 @@ public RecordType fromJSON(RecordType)(JSONValue jsonIn)
 			// pragma(msg, structValues[cnt]);
 		}
 
-		//TODO: Add all integral types
-		static if(__traits(isSame, mixin(structTypes[cnt]), int))
+		static if(__traits(isSame, mixin(structTypes[cnt]), byte))
+		{
+			mixin("record."~structNames[cnt]) = cast(byte)jsonIn[structNames[cnt]].integer();
+		}
+		else static if(__traits(isSame, mixin(structTypes[cnt]), ubyte))
+		{
+			mixin("record."~structNames[cnt]) = cast(ubyte)jsonIn[structNames[cnt]].uinteger();
+		}
+		else static if(__traits(isSame, mixin(structTypes[cnt]), short))
+		{
+			mixin("record."~structNames[cnt]) = cast(short)jsonIn[structNames[cnt]].integer();
+		}
+		else static if(__traits(isSame, mixin(structTypes[cnt]), ushort))
+		{
+			mixin("record."~structNames[cnt]) = cast(ushort)jsonIn[structNames[cnt]].uinteger();
+		}
+		else static if(__traits(isSame, mixin(structTypes[cnt]), int))
 		{
 			mixin("record."~structNames[cnt]) = cast(int)jsonIn[structNames[cnt]].integer();
 		}
 		else static if(__traits(isSame, mixin(structTypes[cnt]), uint))
 		{
-			mixin("record."~structNames[cnt]) = cast(uint)jsonIn[structNames[cnt]].integer();
+			mixin("record."~structNames[cnt]) = cast(uint)jsonIn[structNames[cnt]].uinteger();
 		}
 		else static if(__traits(isSame, mixin(structTypes[cnt]), ulong))
 		{
-			mixin("record."~structNames[cnt]) = cast(ulong)jsonIn[structNames[cnt]].integer();
+			mixin("record."~structNames[cnt]) = cast(ulong)jsonIn[structNames[cnt]].uinteger();
 		}
 		else static if(__traits(isSame, mixin(structTypes[cnt]), long))
 		{
