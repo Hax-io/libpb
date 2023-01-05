@@ -100,7 +100,7 @@ public class PocketBase
 	 *
 	 * Returns: A list of type <code>RecordType</code>
 	 */
-	private RecordType[] listRecords_internal(RecordType)(string table, ulong page = 1, ulong perPage = 30, string filter = "", bool isAuthCollection = false)
+	private RecordType[] listRecords_internal(RecordType)(string table, ulong page, ulong perPage, string filter, bool isAuthCollection)
 	{
 		// Set authorization token if setup
 		HTTP httpSettings = HTTP();
@@ -230,7 +230,7 @@ public class PocketBase
 	 *
 	 * Returns: An instance of the created <code>RecordType</code>
 	 */
-	private RecordType createRecord_internal(string, RecordType)(string table, RecordType item, bool isAuthCollection = false)
+	private RecordType createRecord_internal(string, RecordType)(string table, RecordType item, bool isAuthCollection)
 	{
 		idAbleCheck(item);
 
