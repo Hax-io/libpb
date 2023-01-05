@@ -476,7 +476,22 @@ public class PocketBase
 
 	/** 
 	 * Updates the given record in the given table, returning the
-	 * updated record
+	 * updated record (auth collections)
+	 *
+	 * Params:
+	 *   table = tabe table to update the record in
+	 *   item = the record of type <code>RecordType</code> to update
+	 *
+	 * Returns: The updated <code>RecordType</code>
+	 */
+	public RecordType updateRecordAuth(string, RecordType)(string table, RecordType item)
+	{
+		return updateRecord_internal(table, item, true);
+	}
+
+	/** 
+	 * Updates the given record in the given table, returning the
+	 * updated record (base collections)
 	 *
 	 * Params:
 	 *   table = tabe table to update the record in
@@ -485,6 +500,23 @@ public class PocketBase
 	 * Returns: The updated <code>RecordType</code>
 	 */
 	public RecordType updateRecord(string, RecordType)(string table, RecordType item)
+	{
+		return updateRecord_internal(table, item, false);
+	}
+
+	/** 
+	 * Updates the given record in the given table, returning the
+	 * updated record (internal)
+	 *
+	 * Params:
+	 *   table = tabe table to update the record in
+	 *   item = the record of type <code>RecordType</code> to update
+	 *   isAuthCollection = true if this is an auth collection, false
+	 *   for base collection
+	 *
+	 * Returns: The updated <code>RecordType</code>
+	 */
+	private RecordType updateRecord_internal(string, RecordType)(string table, RecordType item, bool isAuthCollection)
 	{
 		idAbleCheck(item);
 
@@ -505,6 +537,21 @@ public class PocketBase
 		{
 			string responseData = cast(string)patch(pocketBaseURL~"collections/"~table~"/records/"~item.id, serialized.toString(), httpSettings);
 			JSONValue responseJSON = parseJSON(responseData);
+
+			// If this is an authable record (meaning it has email, password and passwordConfirm)
+			// well then the latter two will not be returned so fill them in. Secondly, the email
+			// will only be returned if `emailVisibility` is true.
+			if(isAuthCollection)
+			{
+				responseJSON["password"] = "";
+				responseJSON["passwordConfirm"] = "";
+
+				// If email is invisible make a fake field to prevent crash
+				if(!responseJSON["emailVisibility"].boolean())
+				{
+					responseJSON["email"] = "";
+				}
+			}
 
 			recordOut = fromJSON!(RecordType)(responseJSON);
 			
@@ -792,6 +839,12 @@ unittest
 	// assert(cmp(people[0].email, p1.email) == 0);
 
 
+	string newName = "Bababooey";
+	person.name = newName;
+	person = pb.updateRecordAuth("dummy_auth", person);
+	assert(cmp(person.name, newName) == 0);
+
+
 
 	string tokenIn;
 	Person authPerson = pb.authWithPassword!(Person)("dummy_auth", p1.username, passwordToUse, tokenIn);
@@ -801,9 +854,9 @@ unittest
 	writeln("Token: "~tokenIn);
 
 	// Ensure we get our person back
-	assert(cmp(authPerson.name, p1.name) == 0);
-	assert(authPerson.age == p1.age);
-	assert(cmp(authPerson.email, p1.email) == 0);
+	assert(cmp(authPerson.name, person.name) == 0);
+	assert(authPerson.age == person.age);
+	assert(cmp(authPerson.email, person.email) == 0);
 
 	// Delete the record
 	pb.deleteRecord("dummy_auth", p1);
