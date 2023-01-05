@@ -46,7 +46,7 @@
         "schema": [
             {
                 "id": "psy7unkl",
-                "name": "bruh",
+                "name": "name",
                 "type": "text",
                 "system": false,
                 "required": false,
@@ -55,6 +55,18 @@
                     "min": null,
                     "max": null,
                     "pattern": ""
+                }
+            },
+            {
+                "id": "jroziygp",
+                "name": "age",
+                "type": "number",
+                "system": false,
+                "required": false,
+                "unique": false,
+                "options": {
+                    "min": null,
+                    "max": null
                 }
             }
         ],
