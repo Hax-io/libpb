@@ -56,16 +56,51 @@ public class PocketBase
 	}
 
 	/** 
-	 * List all of the records in the given table
+	 * List all of the records in the given table (base collection)
 	 *
 	 * Params:
 	 *   table = the table to list from
 	 *   page = the page to look at (default is 1)
 	 *   perPage = the number of items to return per page (default is 30)
+	 *   filter = the predicate to filter by
 	 *
 	 * Returns: A list of type <code>RecordType</code>
 	 */
 	public RecordType[] listRecords(RecordType)(string table, ulong page = 1, ulong perPage = 30, string filter = "")
+	{
+		return listRecords_internal!(RecordType)(table, page, perPage, filter, false);
+	}
+
+	/** 
+	 * List all of the records in the given table (auth collection)
+	 *
+	 * Params:
+	 *   table = the table to list from
+	 *   page = the page to look at (default is 1)
+	 *   perPage = the number of items to return per page (default is 30)
+	 *   filter = the predicate to filter by
+	 *
+	 * Returns: A list of type <code>RecordType</code>
+	 */
+	public RecordType[] listRecordsAuth(RecordType)(string table, ulong page = 1, ulong perPage = 30, string filter = "")
+	{
+		return listRecords_internal!(RecordType)(table, page, perPage, filter, true);
+	}
+
+	/** 
+	 * List all of the records in the given table (internals)
+	 *
+	 * Params:
+	 *   table = the table to list from
+	 *   page = the page to look at (default is 1)
+	 *   perPage = the number of items to return per page (default is 30)
+	 *   filter = the predicate to filter by
+	 *   isAuthCollection = true if this is an auth collection, false
+	 *   for base collection
+	 *
+	 * Returns: A list of type <code>RecordType</code>
+	 */
+	private RecordType[] listRecords_internal(RecordType)(string table, ulong page = 1, ulong perPage = 30, string filter = "", bool isAuthCollection = false)
 	{
 		// Set authorization token if setup
 		HTTP httpSettings = HTTP();
@@ -105,8 +140,24 @@ public class PocketBase
 			string responseData = cast(string)get(pocketBaseURL~"collections/"~table~"/records?"~queryStr, httpSettings);
 			JSONValue responseJSON = parseJSON(responseData);
 			JSONValue[] returnedItems = responseJSON["items"].array();
+
 			foreach(JSONValue returnedItem; returnedItems)
 			{
+				// If this is an authable record (meaning it has email, password and passwordConfirm)
+				// well then the latter two will not be returned so fill them in. Secondly, the email
+				// will only be returned if `emailVisibility` is true.
+				if(isAuthCollection)
+				{
+					returnedItem["password"] = "";
+					returnedItem["passwordConfirm"] = "";
+
+					// If email is invisible make a fake field to prevent crash
+					if(!returnedItem["emailVisibility"].boolean())
+					{
+						returnedItem["email"] = "";
+					}
+				}
+			
 				recordsOut ~= fromJSON!(RecordType)(returnedItem);
 			}
 			
@@ -223,6 +274,11 @@ public class PocketBase
 		}
 		catch(HTTPStatusException e)
 		{
+			debug(dbg)
+			{
+				writeln("createRecord_internal: "~e.toString());
+			}
+
 			if(e.status == 403)
 			{
 				throw new NotAuthorized(table, item.id);
@@ -324,7 +380,7 @@ public class PocketBase
 	}
 
 	/** 
-	 * View the given record by id
+	 * View the given record by id (base collections)
 	 *
 	 * Params:
 	 *   table = the table to lookup the record in
@@ -333,6 +389,37 @@ public class PocketBase
 	 * Returns: The found record of type <code>RecordType</code>
 	 */
 	public RecordType viewRecord(RecordType)(string table, string id)
+	{
+		return viewRecord_internal!(RecordType)(table, id, false);
+	}
+
+
+	/** 
+	 * View the given record by id (auth collections)
+	 *
+	 * Params:
+	 *   table = the table to lookup the record in
+	 *   id = the id to lookup the record by
+	 *
+	 * Returns: The found record of type <code>RecordType</code>
+	 */
+	public RecordType viewRecordAuth(RecordType)(string table, string id)
+	{
+		return viewRecord_internal!(RecordType)(table, id, true);
+	}
+
+	/** 
+	 * View the given record by id (internal)
+	 *
+	 * Params:
+	 *   table = the table to lookup the record in
+	 *   id = the id to lookup the record by
+	 *   isAuthCollection = true if this is an auth collection, false
+	 *   for base collection
+	 *
+	 * Returns: The found record of type <code>RecordType</code>
+	 */
+	private RecordType viewRecord_internal(RecordType)(string table, string id, bool isAuthCollection)
 	{
 		RecordType recordOut;
 
@@ -345,6 +432,21 @@ public class PocketBase
 		{
 			string responseData = cast(string)get(pocketBaseURL~"collections/"~table~"/records/"~id, httpSettings);
 			JSONValue responseJSON = parseJSON(responseData);
+
+			// If this is an authable record (meaning it has email, password and passwordConfirm)
+			// well then the latter two will not be returned so fill them in. Secondly, the email
+			// will only be returned if `emailVisibility` is true.
+			if(isAuthCollection)
+			{
+				responseJSON["password"] = "";
+				responseJSON["passwordConfirm"] = "";
+
+				// If email is invisible make a fake field to prevent crash
+				if(!responseJSON["emailVisibility"].boolean())
+				{
+					responseJSON["email"] = "";
+				}
+			}
 
 			recordOut = fromJSON!(RecordType)(responseJSON);
 			
@@ -673,6 +775,24 @@ unittest
 	p1 = pb.createRecordAuth("dummy_auth", p1);
 
 
+	Person[] people = pb.listRecordsAuth!(Person)("dummy_auth", 1, 30, "(id='"~p1.id~"')");
+	assert(people.length == 1);
+
+	// Ensure we get our person back
+	assert(cmp(people[0].name, p1.name) == 0);
+	assert(people[0].age == p1.age);
+	// assert(cmp(people[0].email, p1.email) == 0);
+
+
+	Person person = pb.viewRecordAuth!(Person)("dummy_auth", p1.id);
+
+	// Ensure we get our person back
+	assert(cmp(people[0].name, p1.name) == 0);
+	assert(people[0].age == p1.age);
+	// assert(cmp(people[0].email, p1.email) == 0);
+
+
+
 	string tokenIn;
 	Person authPerson = pb.authWithPassword!(Person)("dummy_auth", p1.username, passwordToUse, tokenIn);
 
@@ -685,10 +805,7 @@ unittest
 	assert(authPerson.age == p1.age);
 	assert(cmp(authPerson.email, p1.email) == 0);
 
-
-
-
-
+	// Delete the record
 	pb.deleteRecord("dummy_auth", p1);
 }
 
