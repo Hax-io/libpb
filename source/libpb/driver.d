@@ -139,15 +139,8 @@ public class PocketBase
 		}
 	}
 
-	public RecordType createRecordAuth(string, RecordType)(string table, RecordType item)
-	{
-		mixin isAuthable!(RecordType);
-
-		return createRecord(table, item, true);
-	}
-
 	/** 
-	 * Creates a record in the given table
+	 * Creates a record in the given authentication table
 	 *
 	 * Params:
 	 *   table = the table to create the record in
@@ -155,7 +148,38 @@ public class PocketBase
 	 *
 	 * Returns: An instance of the created <code>RecordType</code>
 	 */
-	public RecordType createRecord(string, RecordType)(string table, RecordType item, bool isAuthCollection = false)
+	public RecordType createRecordAuth(string, RecordType)(string table, RecordType item)
+	{
+		mixin isAuthable!(RecordType);
+
+		return createRecord_internal(table, item, true);
+	}
+
+	/** 
+	 * Creates a record in the given base table
+	 *
+	 * Params:
+	 *   table = the table to create the record in
+	 *   item = The Record to create
+	 *
+	 * Returns: An instance of the created <code>RecordType</code>
+	 */
+	public RecordType createRecord(string, RecordType)(string table, RecordType item)
+	{
+		return createRecord_internal(table, item, false);
+	}
+
+	/** 
+	 * Creates a record in the given table (internal method)
+	 *
+	 * Params:
+	 *   table = the table to create the record in
+	 *   item = The Record to create
+	 *   isAuthCollection = whether or not this collection is auth or not (base)
+	 *
+	 * Returns: An instance of the created <code>RecordType</code>
+	 */
+	private RecordType createRecord_internal(string, RecordType)(string table, RecordType item, bool isAuthCollection = false)
 	{
 		idAbleCheck(item);
 
