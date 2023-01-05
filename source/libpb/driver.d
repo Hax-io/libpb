@@ -139,6 +139,13 @@ public class PocketBase
 		}
 	}
 
+	public RecordType createRecordAuth(string, RecordType)(string table, RecordType item)
+	{
+		mixin isAuthable!(RecordType);
+
+		return createRecord(table, item, true);
+	}
+
 	/** 
 	 * Creates a record in the given table
 	 *
@@ -150,19 +157,6 @@ public class PocketBase
 	 */
 	public RecordType createRecord(string, RecordType)(string table, RecordType item, bool isAuthCollection = false)
 	{
-		debug(dbg)
-		{
-			writeln(item);
-			writeln("isAuthCollection: ", isAuthCollection);
-		}
-
-		//TODO: Implement me, this is always getting triggered for some reason, well makes sense
-		//it is triggered at compile time to check, we should probably make a seperate method `createRecordAuth()`
-		if(isAuthCollection)
-		{
-			// mixin isAuthable!(RecordType);
-		}
-		
 		idAbleCheck(item);
 
 		RecordType recordOut;
@@ -641,7 +635,7 @@ unittest
 	p1.name = "Tristaniha";
 	p1.age = 29;
 
-	p1 = pb.createRecord("dummy_auth", p1, true);
+	p1 = pb.createRecordAuth("dummy_auth", p1);
 
 
 	string tokenIn;
