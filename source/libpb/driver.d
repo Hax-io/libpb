@@ -158,7 +158,7 @@ public class PocketBase
 					}
 				}
 			
-				recordsOut ~= fromJSON!(RecordType)(returnedItem);
+				recordsOut ~= T!(RecordType).fromJSON(returnedItem);
 			}
 			
 			return recordsOut;
@@ -268,7 +268,7 @@ public class PocketBase
 				responseJSON["passwordConfirm"] = "";
 			}
 			
-			recordOut = fromJSON!(RecordType)(responseJSON);
+			recordOut = T!(RecordType).fromJSON(responseJSON);
 			
 			return recordOut;
 		}
@@ -349,7 +349,7 @@ public class PocketBase
 			}
 
 
-			recordOut = fromJSON!(RecordType)(recordResponse);
+			recordOut = T!(RecordType).fromJSON(recordResponse);
 
 			// Store the token
 			token = responseJSON["token"].str();
@@ -448,7 +448,7 @@ public class PocketBase
 				}
 			}
 
-			recordOut = fromJSON!(RecordType)(responseJSON);
+			recordOut = T!(RecordType).fromJSON(responseJSON);
 			
 			return recordOut;
 		}
@@ -553,7 +553,7 @@ public class PocketBase
 				}
 			}
 
-			recordOut = fromJSON!(RecordType)(responseJSON);
+			recordOut = T!(RecordType).fromJSON(responseJSON);
 			
 			return recordOut;
 		}
