@@ -1,10 +1,11 @@
 module libpb.deserialization;
 
 import std.json;
-import std.traits : FieldTypeTuple, FieldNameTuple;
 
-template T(RecordType)
+
+mixin template T(RecordType)
 {
+	import std.traits : FieldTypeTuple, FieldNameTuple;
 	public RecordType fromJSON(JSONValue jsonIn)
 	{
 		RecordType record;
@@ -131,7 +132,8 @@ unittest
 }
 `);
 
-	Person person = T!(Person).fromJSON(json);
+	mixin T!(Person);
+	Person person = fromJSON(json);
 
 	debug(dbg)
 	{
