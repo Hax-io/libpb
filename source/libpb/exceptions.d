@@ -61,3 +61,12 @@ public final class PocketBaseParsingException : PBException
 {
 
 }
+
+
+public final class RemoteFieldMissing : PBException
+{
+	this()
+	{
+		
+	}
+}
