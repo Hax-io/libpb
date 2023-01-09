@@ -3,137 +3,131 @@ module libpb.deserialization;
 import std.json;
 import libpb.exceptions : RemoteFieldMissing;
 
+import std.traits : FieldTypeTuple, FieldNameTuple;
+
 /** 
- * T
- *
- * Params:
- *    RecordType = type of the struct to construct
- */
-mixin template T(RecordType)
+	* Deserializes the provided JSON into a struct of type RecordType
+	*
+	* Params:
+	*   jsonIn = the JSON to deserialize
+	* Throws:
+	*   RemoteFieldMissing = if the field names in the provided RecordType
+	*   	      cannot be found within the prpvided JSONValue `jsonIn`.
+	* Returns: an instance of RecordType
+	*/
+public RecordType fromJSON(RecordType)(JSONValue jsonIn)
 {
-	import std.traits : FieldTypeTuple, FieldNameTuple;
+	RecordType record;
 
-	/** 
-	 * Deserializes the provided JSON into a struct of type RecordType
-	 *
-	 * Params:
-	 *   jsonIn = the JSON to deserialize
-	 * Throws:
-	 *   RemoteFieldMissing = if the field names in the provided RecordType
-	 *   	      cannot be found within the prpvided JSONValue `jsonIn`.
-	 * Returns: an instance of RecordType
-	 */
-	public RecordType fromJSON(JSONValue jsonIn)
+	// Alias as to only expand later when used in compile-time
+	alias structTypes = FieldTypeTuple!(RecordType);
+	alias structNames = FieldNameTuple!(RecordType);
+	alias structValues = record.tupleof;
+
+	static foreach(cnt; 0..structTypes.length)
 	{
-		RecordType record;
-
-		// Alias as to only expand later when used in compile-time
-		alias structTypes = FieldTypeTuple!(RecordType);
-		alias structNames = FieldNameTuple!(RecordType);
-		alias structValues = record.tupleof;
-
-		static foreach(cnt; 0..structTypes.length)
+		debug(dbg)
 		{
-			debug(dbg)
-			{
-				pragma(msg, structTypes[cnt]);
-				pragma(msg, structNames[cnt]);
-				// pragma(msg, structValues[cnt]);
-			}
+			pragma(msg, structTypes[cnt]);
+			pragma(msg, structNames[cnt]);
+			// pragma(msg, structValues[cnt]);
+		}
 
+		debug(dbg)
+		{
 			pragma(msg, "Bruh type");
 			pragma(msg,  structTypes[cnt]);
 			// pragma(msg, __traits(identifier, mixin(structTypes[cnt])));
-
-			try
-			{
-				static if(__traits(isSame, mixin(structTypes[cnt]), byte))
-				{
-					mixin("record."~structNames[cnt]) = cast(byte)jsonIn[structNames[cnt]].integer();
-				}
-				else static if(__traits(isSame, mixin(structTypes[cnt]), ubyte))
-				{
-					mixin("record."~structNames[cnt]) = cast(ubyte)jsonIn[structNames[cnt]].uinteger();
-				}
-				else static if(__traits(isSame, mixin(structTypes[cnt]), short))
-				{
-					mixin("record."~structNames[cnt]) = cast(short)jsonIn[structNames[cnt]].integer();
-				}
-				else static if(__traits(isSame, mixin(structTypes[cnt]), ushort))
-				{
-					mixin("record."~structNames[cnt]) = cast(ushort)jsonIn[structNames[cnt]].uinteger();
-				}
-				else static if(__traits(isSame, mixin(structTypes[cnt]), int))
-				{
-					mixin("record."~structNames[cnt]) = cast(int)jsonIn[structNames[cnt]].integer();
-				}
-				else static if(__traits(isSame, mixin(structTypes[cnt]), uint))
-				{
-					mixin("record."~structNames[cnt]) = cast(uint)jsonIn[structNames[cnt]].uinteger();
-				}
-				else static if(__traits(isSame, mixin(structTypes[cnt]), ulong))
-				{
-					mixin("record."~structNames[cnt]) = cast(ulong)jsonIn[structNames[cnt]].uinteger();
-				}
-				else static if(__traits(isSame, mixin(structTypes[cnt]), long))
-				{
-					mixin("record."~structNames[cnt]) = cast(long)jsonIn[structNames[cnt]].integer();
-				}
-				else static if(__traits(isSame, mixin(structTypes[cnt]), string))
-				{
-					mixin("record."~structNames[cnt]) = jsonIn[structNames[cnt]].str();
-
-					debug(dbg)
-					{
-						pragma(msg,"record."~structNames[cnt]);
-					}
-				}
-				else static if(__traits(isSame, mixin(structTypes[cnt]), JSONValue))
-				{
-					mixin("record."~structNames[cnt]) = jsonIn[structNames[cnt]];
-
-					debug(dbg)
-					{
-						pragma(msg,"record."~structNames[cnt]);
-					}
-				}
-				else static if(__traits(isSame, mixin(structTypes[cnt]), bool))
-				{
-					mixin("record."~structNames[cnt]) = jsonIn[structNames[cnt]].boolean();
-
-					debug(dbg)
-					{
-						pragma(msg,"record."~structNames[cnt]);
-					}
-				}
-				//FIXME: Not sure how to get array support going, very new to meta programming
-				else static if(__traits(isSame, mixin(structTypes[cnt]), mixin(structTypes[cnt])[]))
-				{
-					mixin("record."~structNames[cnt]) = jsonIn[structNames[cnt]].boolean();
-
-					debug(dbg)
-					{
-						pragma(msg,"record."~structNames[cnt]);
-					}
-				}
-				else
-				{
-					// throw new
-					//TODO: Throw error
-					debug(dbg)
-					{
-						pragma(msg, "Unknown type for de-serialization");
-					}
-				}
-			}
-			catch(JSONException e)
-			{
-				throw new RemoteFieldMissing();
-			}
 		}
 
-		return record;
+		try
+		{
+			static if(__traits(isSame, mixin(structTypes[cnt]), byte))
+			{
+				mixin("record."~structNames[cnt]) = cast(byte)jsonIn[structNames[cnt]].integer();
+			}
+			else static if(__traits(isSame, mixin(structTypes[cnt]), ubyte))
+			{
+				mixin("record."~structNames[cnt]) = cast(ubyte)jsonIn[structNames[cnt]].uinteger();
+			}
+			else static if(__traits(isSame, mixin(structTypes[cnt]), short))
+			{
+				mixin("record."~structNames[cnt]) = cast(short)jsonIn[structNames[cnt]].integer();
+			}
+			else static if(__traits(isSame, mixin(structTypes[cnt]), ushort))
+			{
+				mixin("record."~structNames[cnt]) = cast(ushort)jsonIn[structNames[cnt]].uinteger();
+			}
+			else static if(__traits(isSame, mixin(structTypes[cnt]), int))
+			{
+				mixin("record."~structNames[cnt]) = cast(int)jsonIn[structNames[cnt]].integer();
+			}
+			else static if(__traits(isSame, mixin(structTypes[cnt]), uint))
+			{
+				mixin("record."~structNames[cnt]) = cast(uint)jsonIn[structNames[cnt]].uinteger();
+			}
+			else static if(__traits(isSame, mixin(structTypes[cnt]), ulong))
+			{
+				mixin("record."~structNames[cnt]) = cast(ulong)jsonIn[structNames[cnt]].uinteger();
+			}
+			else static if(__traits(isSame, mixin(structTypes[cnt]), long))
+			{
+				mixin("record."~structNames[cnt]) = cast(long)jsonIn[structNames[cnt]].integer();
+			}
+			else static if(__traits(isSame, mixin(structTypes[cnt]), string))
+			{
+				mixin("record."~structNames[cnt]) = jsonIn[structNames[cnt]].str();
+
+				debug(dbg)
+				{
+					pragma(msg,"record."~structNames[cnt]);
+				}
+			}
+			else static if(__traits(isSame, mixin(structTypes[cnt]), JSONValue))
+			{
+				mixin("record."~structNames[cnt]) = jsonIn[structNames[cnt]];
+
+				debug(dbg)
+				{
+					pragma(msg,"record."~structNames[cnt]);
+				}
+			}
+			else static if(__traits(isSame, mixin(structTypes[cnt]), bool))
+			{
+				mixin("record."~structNames[cnt]) = jsonIn[structNames[cnt]].boolean();
+
+				debug(dbg)
+				{
+					pragma(msg,"record."~structNames[cnt]);
+				}
+			}
+			//FIXME: Not sure how to get array support going, very new to meta programming
+			else static if(__traits(isSame, mixin(structTypes[cnt]), mixin(structTypes[cnt])[]))
+			{
+				mixin("record."~structNames[cnt]) = jsonIn[structNames[cnt]].boolean();
+
+				debug(dbg)
+				{
+					pragma(msg,"record."~structNames[cnt]);
+				}
+			}
+			else
+			{
+				// throw new
+				//TODO: Throw error
+				debug(dbg)
+				{
+					pragma(msg, "Unknown type for de-serialization");
+				}
+			}
+		}
+		catch(JSONException e)
+		{
+			throw new RemoteFieldMissing();
+		}
 	}
+
+	return record;
 }
 
 unittest
@@ -160,8 +154,7 @@ unittest
 }
 `);
 
-	mixin T!(Person);
-	Person person = fromJSON(json);
+	Person person = fromJSON!(Person)(json);
 
 	debug(dbg)
 	{
@@ -199,10 +192,9 @@ unittest
 }
 `);
 
-	mixin T!(Person);
 	try
 	{
-		Person person = fromJSON(json);
+		Person person = fromJSON!(Person)(json);
 		assert(false);
 	}
 	catch(RemoteFieldMissing)
