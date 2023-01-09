@@ -1,3 +1,5 @@
+![](branding/logo.png)
+
 libpb
 =====
 
