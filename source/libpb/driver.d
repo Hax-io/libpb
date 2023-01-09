@@ -6,8 +6,7 @@ import std.net.curl;
 import std.conv : to;
 import std.string : cmp;
 import libpb.exceptions;
-import libpb.serialization;
-import libpb.deserialization;
+import jstruct : fromJSON, SerializationError, serializeRecord;
 
 
 private mixin template AuthTokenHeader(alias http, PocketBase pbInstance)
@@ -188,6 +187,10 @@ public class PocketBase
 		{
 			throw new PocketBaseParsingException();
 		}
+		catch(SerializationError e)
+		{
+			throw new RemoteFieldMissing();
+		}
 	}
 
 	/** 
@@ -301,6 +304,10 @@ public class PocketBase
 		{
 			throw new PocketBaseParsingException();
 		}
+		catch(SerializationError e)
+		{
+			throw new RemoteFieldMissing();
+		}
 	}
 
 	/** 
@@ -375,6 +382,10 @@ public class PocketBase
 		catch(JSONException e)
 		{
 			throw new PocketBaseParsingException();
+		}
+		catch(SerializationError e)
+		{
+			throw new RemoteFieldMissing();
 		}
 	}
 
@@ -470,6 +481,10 @@ public class PocketBase
 		catch(JSONException e)
 		{
 			throw new PocketBaseParsingException();
+		}
+		catch(SerializationError e)
+		{
+			throw new RemoteFieldMissing();
 		}
 	}
 
@@ -583,6 +598,10 @@ public class PocketBase
 		catch(JSONException e)
 		{
 			throw new PocketBaseParsingException();
+		}
+		catch(SerializationError e)
+		{
+			throw new RemoteFieldMissing();
 		}
 	}
 
