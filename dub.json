@@ -4,7 +4,7 @@
 	],
 	"copyright": "Copyright © 2022, Tristan B. Velloza Kildaire",
 	"dependencies": {
-		"jstruct": "0.1.2"
+		"jstruct": ">=0.1.2"
 	},
 	"description": "PocketBase wrapper with serializer/deserializer support",
 	"libs": [
